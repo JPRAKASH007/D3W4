@@ -1,0 +1,127 @@
+---
+title: "Power of Compounding"
+author: "Jyoti Prakash"
+date: "August 11, 2017"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Power of Compounding
+
+The App simulates the growth of on initial investement with certain % of interest compounded annualy after certain years and compares it with simple/linear growth.
+
+The App requires following input parameters
+
+- Initial Investment in $ Millions
+- No. of Years of Investment
+- Annual Rate of Interest (%)
+
+Following are the outputs
+
+- Graphical comparision of compounded growth and linear growth.
+- Final investment amount from both the growth models.
+
+## UI.R Code
+
+```{r UI, eval=FALSE,echo=TRUE}
+library(shiny);library(ggplot2);library(plotly)
+
+shinyUI(fluidPage(
+
+  titlePanel("Power of Compounding"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      numericInput("Amount", "Initial Investment ($ Millions)", 
+                   value = 10, min = 1, max = 100, step = 1), 
+      
+      sliderInput("Year", "No. of Years of Investment",
+                  min = 0,max = 30,value = 20),
+      
+      numericInput("Rate","Annual Rate of Interest (%)",
+                   min = 0,max = 20,value = 10,step = .1),
+      
+      checkboxInput("show_CI", "Show/Hide Investment projections with Compounded growth", value = TRUE),
+      
+      checkboxInput("show_SI", "Show/Hide Investment projections with Simple/Linear growth", value = FALSE),
+      
+      h4("------------------------------"),
+      h4("Instructions to use the app"),
+      h5("Input the following"),
+      h5("- Initial Investment in $ Millions"),
+      h5("- No. of Years of Investment"),
+      h5("- Annual Rate of Interest (%)")
+      
+    ),
+    
+    mainPanel(
+      plotlyOutput("plot"),
+      h4("Total value of investment (with compounded growth) - $M :"),
+      textOutput("A"),
+      h4("Total value of investment (with simple/linear growth) - $M :"),
+      textOutput("B")
+    )
+  )
+))
+
+```
+## Server.R Code
+
+```{r SERVER, eval=FALSE,echo=TRUE}
+library(shiny);library(ggplot2);library(plotly)
+
+shinyServer(function(input, output) {
+  
+  output$plot <- renderPlotly({
+    y <- 0:input$Year
+    ACI <- 0:input$Year
+    ASI <- 0:input$Year
+    for (i in 0:input$Year+1) {
+      ACI[i] <- input$Amount*(1+input$Rate/100)^y[i]
+      ASI[i] <- input$Amount*(1+(input$Rate/100)*y[i])
+    }
+    
+    data <- data.frame(y,ACI,ASI) 
+    ## View(data)
+    p <- plot_ly(data) %>%
+      layout(title = 'Power of Compounding',
+             xaxis = list(title = "Years of Investment",showgrid = TRUE,zeroline = TRUE),
+             yaxis = list(side = 'left', title = 'Amount ($ Millons)',showgrid = TRUE, zeroline = TRUE),
+             legend = list(x = 0.1, y = 0.9),
+             hovermode="compare") %>%
+      
+      add_trace(x = ~y, y = ~ACI,type = 'scatter',visible=input$show_CI,mode="lines",name = 'Compounded growth',
+                marker = list(color = "red"),
+                hoverinfo = "text",
+                text = ~paste("Amount ($M):",round(ACI,digits=1),"<br>Year:",y,"<br>Gain over Simple growth ($M):",round(ACI-ASI,digits=1))) %>%
+      
+      add_trace(x = ~y, y = ~ASI, type = 'scatter',visible=input$show_SI,mode="lines",name = 'Simple/linear growth',
+                marker = list(color = "blue"),
+                hoverinfo = "text",
+                text = ~paste("Amount ($M):",round(ASI,digits=1),"<br>Year:",y))
+    
+    
+    
+  })
+  
+  output$A <- renderText({
+    round(input$Amount*(1+input$Rate/100)^input$Year,digits = 1)
+  })
+  
+  output$B <- renderText({
+    input$Amount*(1+(input$Rate/100)*input$Year)
+  })
+  
+})
+
+```
+## App Link
+
+ [Power of Compounding](https://jprakash007.shinyapps.io/power_of_compouding/)
+
+
+## Thank You
+
